@@ -24,8 +24,8 @@ function generate_hit(L,N,M; cbc_path="data/cbc_spectrum.dat", mem=Array)
     ϕm = rand(Uniform(0,2π), M)
     θm = @. acos(2ν-1)
     ψm = rand(Uniform(-π/2,π/2), M)
-    # Highest wave number that can be represented on this grid (nyquist limit)
-    wnn = 2π/dx
+    # Highest wave number that can be represented on this grid (nyquist limit): 2\pi/2dx
+    wnn = π/dx
     # Wavenumber step
     dk = (wnn - wn1) / M
     # Wavenumber at cell centers
@@ -79,28 +79,20 @@ end
 
 spectrum(u, L::Number) = spectrum(u, Tuple(L for i in 1:last(size(u))))
 function spectrum(u, L::Tuple)
-    N,d = size(u)[1:end-1], last(size(u))
-    @assert length(L) == d
-
+    N,D = size(u)[1:end-1], last(size(u))
+    @assert length(L) == D
     dx = L ./ N
-    k0 = 2π ./ L
-    knorm = mean(k0)
-    wn_vec_out = collect(knorm * i for i in 0:N[1]-1)
-    wn_vec = collect(fftfreq(N[i], dx[i]) * N[i]/dx[i] for i in 1:d) # or wave numbers, 0..(N-2)/2,-N/2,...,-1, vcat(0:(N[i]-2)/2,-N[i]/2:-1)
-    r_wn = collect(sqrt(sum(wn_vec[i][I[i]]^2 for i in 1:d)) for I in CartesianIndices(N))
-    for i in 1:d
-        u[dots,i] .-= mean(u[dots,i])
+    k0_norm = mean(2π./L)
+    N_norm = round(Int,mean(N))
+    wn = collect(fftfreq(N[d], dx[d]) * N[d]/dx[d] for d in 1:D) # or wave numbers, 0..(N-2)/2,-N/2,...,-1, vcat(0:(N[i]-2)/2,-N[i]/2:-1)
+    uk = collect(fft(u[dots,d])/prod(N) for d in 1:D)
+    tke = 0.5sum(uk[dots,d].*conj(uk[dots,d]) for d in 1:D) |> real # TKE distributed across n-dimensional wavenumber space
+    tke_sum = zeros(1:N_norm) # spherically integrated TKE with M modes of resolution
+    for IJK in CartesianIndices(tke)
+        rk = sqrt(sum(wn[d][IJK[d]]^2 for d in 1:D)) |> x->round(Int,x)
+        tke_sum[rk+1] += tke[IJK]
     end
-    uk = collect(fft(u[dots,i])/prod(N) for i in 1:d)
-    tke = 0.5sum(uk[dots,i].*conj(uk[dots,i]) for i in 1:d) |> real # TKE distributed across n-dimensional wavenumber space
-    tke_sum = zeros(length(wn_vec_out)) # spherically integrated TKE with M modes of resolution
-
-    for ijk in eachindex(tke)
-        k = round(Int, r_wn[ijk])
-        k < 1 && continue
-        tke_sum[k] += tke[ijk]
-    end
-    return wn_vec_out, tke_sum./knorm
+    return collect(k0_norm * i for i in 0:N_norm-1), tke_sum./k0_norm
 end
 
 end # module HIT

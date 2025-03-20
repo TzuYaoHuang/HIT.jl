@@ -26,20 +26,20 @@ function cbc_spectrum(cbc_path="data/cbc_spectrum.dat", cbc_t=1)
     return k_cbc, E
 end
 
-function plot_spectra!(p, u, L, N; cbc_path="cbc_spectrum.dat", cbc_t=1, fig_path="Ek.pdf", label=L"~%$(N[1])^3")
+function plot_spectra!(p, L, N, u; cbc_path="cbc_spectrum.dat", cbc_t=1, fig_path="Ek.pdf", label=L"~%$(N[1])^3")
     if !isnothing(cbc_path)
         label_cbc = any(p.series_list[i][:label]=="CBC" for i in 1:length(p.series_list)) ? nothing : "CBC"
         k_cbc, E = cbc_spectrum(cbc_path, cbc_t)
         Plots.plot!(p, k_cbc, E(k_cbc), label=label_cbc, color=:black)
     end
 
-    k, tke = spectrum(u, (L,L,L))
-    Plots.plot!(p, k[2:end], tke[2:end], label=label)
+    k, tke = spectrum(u, L)
+    Plots.plot!(p, k[2:end], tke[2:end], label=label, marker=:circle, markersize=2, markevery=1,)
     Plots.vline!(p, [2π/(L/(N/2))], label=:none, ls=:dash, color=:purple)
 
-    Plots.plot!(p, xaxis=:log10, yaxis=:log10, xlims=(10,5e3), ylims=(1e-6,1e-3),
+    Plots.plot!(p, xaxis=:log10, yaxis=:log10, xlims=(10,1e3), ylims=(1e-6,1e-3),
         xlabel=L"\kappa", ylabel=L"E(\kappa)",framestyle=:box, grid=true, minorgrid=true,
-        left_margin=Plots.Measures.Length(:mm, 0), bottom_margin=Plots.Measures.Length(:mm, 0), size=(600,600)
+        left_margin=Plots.Measures.Length(:mm, 0), bottom_margin=Plots.Measures.Length(:mm, 0), size=(900,600)
     )
     savefig(p, fig_path)
     println("Figure stored in $(fig_path)")

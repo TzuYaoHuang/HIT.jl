@@ -10,7 +10,7 @@ function forced_hit_sgs!(flow, t; νₜ, S, C=0.16)
     sgs!(flow, t; νₜ, S, C)
 end
 smagorinsky(I::CartesianIndex{m} where m, S; C=0.2) = @views C^2*sqrt(dot(S[I,:,:],S[I,:,:]))
-function hit(N, M; cbc_path="data/cbc_spectrum.dat", ν=1e-6, L=1, U=1, mem=Array, T=Float32)
+function hit(L, N, M; cbc_path="data/cbc_spectrum.dat", ν=1e-6, U=1, mem=Array, T=Float32)
     sim = Simulation((N,N,N), (0,0,0), L; U, ν, T, mem, perdir=(1,2,3))
     u0, v0, w0 = generate_hit(L,N,M; cbc_path, mem)
     Ni,d = size_u(sim.flow.u)
@@ -35,7 +35,7 @@ function run_hit(p, mem; udf=nothing, C=0.2, Re=1600, T=Float32, t_max=20.0, ver
 end
 
 L = 9*2π/100 # reference length
-N = 2^6 # cells per direction
+N = 2^7 # cells per direction
 M = 2^10 # number of modes for initial condition
 ν = 1e-5
 t0, t1, t2 = 42.0, 98.0, 171.0
@@ -44,7 +44,7 @@ cbc_velocity = 10.0 # velocity scale related to inflow
 t_norm = cbc_length/cbc_velocity # convective time scale
 T = Float32
 mem = CuArray
-C = 0.18 # Smagorinsky constant, C=0.18 typically
+C = 0. # Smagorinsky constant, C=0.18 typically
 C_str = @sprintf("%2.2f", C)
 udf = C > 0 ? sgs! : nothing
 
@@ -52,9 +52,10 @@ cbc_path = joinpath(string(@__DIR__), "../data/cbc_spectrum.dat")
 set_plots_style!(; linewidth=2)
 
 function main()
-    sim, u = hit(N, M; cbc_path, ν, L, mem, T)
+    sim, u0 = hit(L, N, M; cbc_path, ν, mem, T)
+    u_inside = @views sim.flow.u[inside_u(sim.flow.u),:]
     t_str = @sprintf("%2.2f", t0)
-    p = plot_spectra!(Plots.plot(), sim.flow.u|>Array, L, N;
+    p = plot_spectra!(Plots.plot(), L, N, u_inside|>Array;
         cbc_path, cbc_t=1, fig_path="plots/Ek_N$(N)_M$(M)_C$(C_str)_t$(t_str).pdf", label=L"t=%$t_str"
     )
 
@@ -63,13 +64,13 @@ function main()
 
     sim_step!(sim, t1-t0; verbose=true, remeasure=false, udf, νₜ=smagorinsky, S, C)
     t_str = @sprintf("%2.2f", sim_time(sim)+t0)
-    p = plot_spectra!(p, sim.flow.u|>Array, L, N;
+    p = plot_spectra!(p, L, N, u_inside|>Array;
         cbc_path, cbc_t=2, fig_path="plots/Ek_N$(N)_M$(M)_C$(C_str)_t$t_str.pdf", label=L"t=%$t_str"
     )
 
     sim_step!(sim, sim_time(sim)+(t2-t1); verbose=true, remeasure=false, udf, νₜ=smagorinsky, S, C)
     t_str = @sprintf("%2.2f", sim_time(sim)+t0)
-    p = plot_spectra!(p, sim.flow.u|>Array, L, N;
+    p = plot_spectra!(p, L, N, u_inside|>Array;
         cbc_path, cbc_t=3, fig_path="plots/Ek_N$(N)_M$(M)_C$(C_str)_t$t_str.pdf", label=L"t=%$t_str"
     )
 
