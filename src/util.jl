@@ -26,7 +26,7 @@ function cbc_spectrum(cbc_path="data/cbc_spectrum.dat", cbc_t=1)
     return k_cbc, E
 end
 
-function plot_spectra!(p, L, N, u; cbc_path="cbc_spectrum.dat", cbc_t=1, fig_path="Ek.pdf", label=L"~%$(N[1])^3")
+function plot_spectra!(p, L, N, u; cbc_path="cbc_spectrum.dat", cbc_t=1, fig_path=nothing, label=L"~%$(N[1])^3")
     if !isnothing(cbc_path)
         label_cbc = any(p.series_list[i][:label]=="CBC" for i in 1:length(p.series_list)) ? nothing : "CBC"
         k_cbc, E = cbc_spectrum(cbc_path, cbc_t)
@@ -41,8 +41,7 @@ function plot_spectra!(p, L, N, u; cbc_path="cbc_spectrum.dat", cbc_t=1, fig_pat
         xlabel=L"\kappa", ylabel=L"E(\kappa)",framestyle=:box, grid=true, minorgrid=true,
         left_margin=Plots.Measures.Length(:mm, 0), bottom_margin=Plots.Measures.Length(:mm, 0), size=(900,600)
     )
-    savefig(p, fig_path)
-    println("Figure stored in $(fig_path)")
+    !isnothing(fig_path) && (savefig(p, fig_path); println("Figure stored in $(fig_path)"))
     return p
 end
 

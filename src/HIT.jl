@@ -18,7 +18,6 @@ Homogeneous isotropic turbulence initial condition.
 function generate_hit(L,N,M; cbc_path="data/cbc_spectrum.dat", mem=Array)
     dx = L/N # cell size
     wn1 = 2π/L # smallest wavenumber represented by this spectrum, determined here from cbc spectrum properties
-
     # Compute random angles in unit sphere
     ν = rand(Uniform(0,1), M)
     ϕm = rand(Uniform(0,2π), M)
