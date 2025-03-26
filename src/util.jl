@@ -1,6 +1,7 @@
 using Plots, StatsPlots, LaTeXStrings, CategoricalArrays, Printf, ColorSchemes
 using GLMakie; GLMakie.activate!(inline=false)
 using WaterLily
+using Distributions: mean
 
 set_plots_style!(; fontsize=14, linewidth=1) = Plots.default(
     fontfamily = "Computer Modern",
@@ -8,10 +9,10 @@ set_plots_style!(; fontsize=14, linewidth=1) = Plots.default(
     framestyle = :box,
     grid = true,
     minorgrid = true,
-    left_margin = Plots.Measures.Length(:mm, 2),
-    right_margin = Plots.Measures.Length(:mm, 2),
-    bottom_margin = Plots.Measures.Length(:mm, 2),
-    top_margin = Plots.Measures.Length(:mm, 2),
+    left_margin = Plots.Measures.Length(:mm, 5),
+    right_margin = Plots.Measures.Length(:mm, 5),
+    bottom_margin = Plots.Measures.Length(:mm, 5),
+    top_margin = Plots.Measures.Length(:mm, 5),
     titlefontsize = fontsize,
     legendfontsize = fontsize,
     tickfontsize = fontsize,
@@ -26,20 +27,23 @@ function cbc_spectrum(cbc_path="data/cbc_spectrum.dat", cbc_t=1)
     return k_cbc, E
 end
 
-function plot_spectra!(p, L, N, u; cbc_path="cbc_spectrum.dat", cbc_t=1, fig_path=nothing, label=L"~%$(N[1])^3")
+function plot_spectra!(p, L, N, u;
+    cbc_path="cbc_spectrum.dat", cbc_t=1, fig_path=nothing, label=L"~%$(N[1])^3")
+    cg = cgrad(:lightrainbow, 10, categorical=true)
     if !isnothing(cbc_path)
-        label_cbc = any(p.series_list[i][:label]=="CBC" for i in 1:length(p.series_list)) ? nothing : "CBC"
+        label_cbc = any(contains(p.series_list[i][:label], "CBC") for i in 1:length(p.series_list)) ? nothing : "CBC (exp)"
         k_cbc, E = cbc_spectrum(cbc_path, cbc_t)
         Plots.plot!(p, k_cbc, E(k_cbc), label=label_cbc, color=:black)
     end
 
     k, tke = spectrum(u, L)
-    Plots.plot!(p, k[2:end], tke[2:end], label=label, marker=:circle, markersize=2, markevery=1,)
-    Plots.vline!(p, [2π/(L/(N/2))], label=:none, ls=:dash, color=:purple)
+    Plots.plot!(p, k[2:end], tke[2:end], label=label, color=cg.colors[length(p.series_list)],
+        marker=:circle, markersize=3, markevery=1, markerstrokewidth=0, legendmarkersize=0.1
+    )
+    Plots.vline!(p, [2π/(L/(N/2))], label=:none, ls=:dash, color=:grey)
 
     Plots.plot!(p, xaxis=:log10, yaxis=:log10, xlims=(10,1e3), ylims=(1e-6,1e-3),
-        xlabel=L"\kappa", ylabel=L"E(\kappa)",framestyle=:box, grid=true, minorgrid=true,
-        left_margin=Plots.Measures.Length(:mm, 0), bottom_margin=Plots.Measures.Length(:mm, 0), size=(900,600)
+        xlabel=L"\kappa", ylabel=L"E(\kappa)",framestyle=:box, grid=true, minorgrid=true, size=(900,600)
     )
     !isnothing(fig_path) && (savefig(p, fig_path); println("Figure stored in $(fig_path)"))
     return p
@@ -51,7 +55,7 @@ function ω!(cpu_array, sim)
     copyto!(cpu_array, a[inside(a)]) # copy to CPU
 end
 
-function ω_viz(sim; t_end=nothing, dt=0.0025, video=false)
+function ω_viz(sim; t_end=nothing, dt=0.0025, video=false, isovalue=0.1)
     function viz_step!(sim; dt)
         sim_step!(sim, sim_time(sim)+dt; remeasure=false, verbose=true)
         ω[] = ω!(dat,sim)
@@ -60,13 +64,14 @@ function ω_viz(sim; t_end=nothing, dt=0.0025, video=false)
     dat = sim.flow.σ[inside(sim.flow.σ)] |> Array; # CPU buffer array
     ω = ω!(dat, sim) |> Observable
     f = Figure(size=(1200,1200))
+    N = mean(size(sim.flow.σ))-2
     ax = Axis3(f[1, 1]; aspect=:equal, limits=(1,N,1,N,1,N))
     hidedecorations!(ax)
 
     colormap = to_colormap(:plasma)
     colormap[1] = RGBAf(0,0,0,0)
     # volume!(ax, ω,  algorithm = :absorption, absorption=1f0, colormap=colormap)
-    volume!(ax, ω, algorithm=:iso, colormap=:rainbow, isovalue=0.1)
+    volume!(ax, ω, algorithm=:iso, colormap=:rainbow, isovalue=isovalue)
     display(f)
 
     if !isnothing(t_end) # time loop for animation
@@ -81,3 +86,6 @@ function ω_viz(sim; t_end=nothing, dt=0.0025, video=false)
         end
     end
 end
+
+δ1(i,::Val{N}) where N = CartesianIndex(ntuple(j -> j==i ? 2 : 1, N))
+δ1(i,I::CartesianIndex{N}) where N = δ1(i, Val{N}())

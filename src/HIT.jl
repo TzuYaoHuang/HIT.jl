@@ -5,7 +5,7 @@ import WaterLily: dot
 
 include("util.jl")
 
-export generate_hit, spectrum, cbc_spectrum, plot_spectra!, ω_viz, set_plots_style!
+export generate_hit, spectrum, cbc_spectrum, plot_spectra!, ω_viz, set_plots_style!, δ1
 
 """
     generate_hit(L,N,M; mem=Array)
@@ -82,6 +82,7 @@ function spectrum(u, L::Tuple)
     @assert length(L) == D
     dx = L ./ N
     k0_norm = mean(2π./L)
+    kmax_norm = mean(2π./(L./(N./2)))
     N_norm = round(Int,mean(N))
     wn = collect(fftfreq(N[d], dx[d]) * N[d]/dx[d] for d in 1:D) # or wave numbers, 0..(N-2)/2,-N/2,...,-1, vcat(0:(N[i]-2)/2,-N[i]/2:-1)
     uk = collect(fft(u[dots,d])/prod(N) for d in 1:D)
@@ -91,7 +92,8 @@ function spectrum(u, L::Tuple)
         rk = sqrt(sum(wn[d][IJK[d]]^2 for d in 1:D)) |> x->round(Int,x)
         tke_sum[rk+1] += tke[IJK]
     end
-    return collect(k0_norm * i for i in 0:N_norm-1), tke_sum./k0_norm
+    k = collect(k0_norm * i for i in 0:N_norm-1)
+    return k, tke_sum./k0_norm
 end
 
 end # module HIT
