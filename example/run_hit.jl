@@ -20,18 +20,18 @@ function hit(L, N, M; length_scale=1, velocity_scale=1, cbc_path="data/cbc_spect
 end
 
 T = Float32 # run with single (Float32) or double (Float64) precision
-mem = CuArray # run on CPU (Array) or GPU (CuArray)
+mem = Array # run on CPU (Array) or GPU (CuArray)
 
 # Experiment: Comte-Bellot & Corrsin 1971, https://doi.org/10.1017/S0022112071001599
 M = 5.08/100 # grid size [m]
 L = 9*2π/100 # length of HIT cube, L = 11M
 velocity_scale = 10 # velocity related to the bulk flow (U₀ in paper)
 
-N = 2^6 # cells per direction
+N = 2^5 # cells per direction
 modes = 2^11 # number of modes for initial isotropic turbulence condition, following Saad et al 2016, https://doi.org/10.2514/1.J055230
 ν = 1.5e-5 # same as Rozema et al 2015, https://doi.org/10.1063/1.4928700
 t0_ctu, t1_ctu, t2_ctu = 42.0, 98.0, 171.0 # in convective time units (CTU), t_ctu=length_scale/velocity_scale = M/U
-C = 0.18|>T # Smagorinsky constant, C=0.18 typically. Here we use C=0.315 for N=2^6, and C=0.35 for N=2^5
+C = 0.2|>T # Smagorinsky constant, C=0.18 typically. Here we use C=0.315 for N=2^6, and C=0.35 for N=2^5
 Δ = sqrt(1^2+1^2+1^2)|>T # Filter width
 λ = cds # convective scheme: cds or quick
 
@@ -63,7 +63,7 @@ function main()
     sim_step!(sim, sim_time(sim)+(t2_ctu-t1_ctu); verbose=true, remeasure=false, udf, νₜ=smagorinsky, S, C, Δ)
     t_str = @sprintf("%2.2f", sim_time(sim)+t0_ctu)
     p = plot_spectra!(p, L, N, u_inside|>Array;
-        cbc_path, cbc_t=3, fig_path="plots/Ek_N$(N)_modes$(modes)_C$(C_str)_$(λ)_t$(t_str).pdf", label=L"t=%$t_str"
+        cbc_path, cbc_t=3, fig_path="plots/Ek_N$(N)_modes$(modes)_C$(C_str)_$(λ)_t2$(t_str).pdf", label=L"t=%$t_str"
     )
 
     return sim, p
