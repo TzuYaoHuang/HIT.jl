@@ -1,4 +1,4 @@
-using Plots, StatsPlots, LaTeXStrings, CategoricalArrays, Printf, ColorSchemes
+using Plots, LaTeXStrings, CategoricalArrays, Printf, ColorSchemes
 using GLMakie; GLMakie.activate!(inline=false)
 using WaterLily
 using Distributions: mean
