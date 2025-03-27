@@ -6,7 +6,7 @@ Random.seed!(99) # seed random turbulence generator
 
 
 WaterLily.CFL(a::Flow;Δt_max=10)=0.5 # set a constant time step
-smagorinsky(I::CartesianIndex{m} where m; S, C, Δ) = @views (C*Δ)^2*sqrt(dot(S[I,:,:],S[I,:,:])) # define the Smagorinsky-Lilly model
+smagorinsky(I::CartesianIndex{m} where m; S, Cs, Δ) = @views (Cs*Δ)^2*sqrt(dot(S[I,:,:],S[I,:,:])) # define the Smagorinsky-Lilly model
 
 # Create the isotropic turbulence box by using `generate_hit` to generate the intial condition. Then we copy it to the velocity field (sim.flow.u)
 function hit(L, N, M; length_scale=1, velocity_scale=1, cbc_path="cbc_spectrum.dat", ν=1e-6, λ=quick, mem=Array, T=Float32)
@@ -25,50 +25,51 @@ mem = Array # run on CPU (Array) or GPU (CuArray)
 
 # Experiment: Comte-Bellot & Corrsin 1971, https://doi.org/10.1017/S0022112071001599
 M = 5.08/100 # grid size [m]
-L = 9*2π/100 # length of HIT cube, L = 11M
-velocity_scale = 10 # velocity related to the bulk flow (U₀ in paper)
+L = 9*2π/100 # length of HIT cube [m], L = 11M
+velocity_scale = 10 # velocity related to the bulk flow (U₀ in paper) [m/s]
 
-N = 2^5 # cells per direction
+N = 2^6 # cells per direction
 modes = 2^11 # number of modes for initial isotropic turbulence condition, following Saad et al 2016, https://doi.org/10.2514/1.J055230
 ν = 1.5e-5 # same as Rozema et al 2015, https://doi.org/10.1063/1.4928700
 t0_ctu, t1_ctu, t2_ctu = 42.0, 98.0, 171.0 # in convective time units (CTU), t_ctu=length_scale/velocity_scale = M/U
-C = 0.2|>T # Smagorinsky constant, C=0.18 typically. Here we use C=0.315 for N=2^6, and C=0.35 for N=2^5
+Cs = 0.18|>T # Smagorinsky constant. Use Cs=0.18 for N=2^6, and Cs=0.20 for N=2^5
 Δ = sqrt(1^2+1^2+1^2)|>T # Filter width
 λ = cds # convective scheme: cds or quick
 
 # Others
 length_scale = M / (L/N) # for CTU, paper uses M, which here we scale with L/N. The experiment domain is L=11M.
-C_str = @sprintf("%2.2f", C)
-udf = C > 0 ? sgs! : nothing
-cbc_path = "cbc_spectrum.dat"
+Cs_str = @sprintf("%2.2f", Cs)
+udf = Cs > 0 ? sgs! : nothing
+cbc_path = joinpath(@__DIR__, "cbc_spectrum.dat")
 set_plots_style!(; linewidth=2)
 
 function main()
-    println("N=$(N), LES=$(udf), C=$(C_str), λ=$(λ)")
+    println("N=$(N), LES=$(udf), Cs=$(Cs_str), λ=$(λ)")
     sim = hit(L, N, modes; length_scale, velocity_scale, cbc_path, ν, λ, mem, T)
     u_inside = @views sim.flow.u[inside_u(sim.flow.u),:]
     t_str = @sprintf("%2.2f", t0_ctu)
-    p = plot_spectra!(Plots.plot(), L, N, u_inside|>Array;
+    p = plot_spectra!(Plots.plot(dpi=600, title=L"$N=%$(N)$"), L, N, u_inside|>Array;
         cbc_path, cbc_t=1, label=L"t=%$t_str"
     )
 
     N1,n = size_u(sim.flow.u)
     S = zeros(T, N1..., n, n) |> mem # working array holding a tensor for each cell
 
-    sim_step!(sim, t1_ctu-t0_ctu; verbose=true, remeasure=false, udf, νₜ=smagorinsky, S, C, Δ)
+    sim_step!(sim, t1_ctu-t0_ctu; verbose=true, remeasure=false, udf, νₜ=smagorinsky, S, Cs, Δ)
     t_str = @sprintf("%2.2f", sim_time(sim)+t0_ctu)
     p = plot_spectra!(p, L, N, u_inside|>Array;
         cbc_path, cbc_t=2, label=L"t=%$t_str"
     )
 
-    sim_step!(sim, sim_time(sim)+(t2_ctu-t1_ctu); verbose=true, remeasure=false, udf, νₜ=smagorinsky, S, C, Δ)
+    sim_step!(sim, sim_time(sim)+(t2_ctu-t1_ctu); verbose=true, remeasure=false, udf, νₜ=smagorinsky, S, Cs, Δ)
     t_str = @sprintf("%2.2f", sim_time(sim)+t0_ctu)
     p = plot_spectra!(p, L, N, u_inside|>Array;
-        cbc_path, cbc_t=3, fig_path="Ek_N$(N)_modes$(modes)_C$(C_str)_$(λ)_t$(t_str).pdf", label=L"t=%$t_str"
+        cbc_path, cbc_t=3, label=L"t=%$t_str",
+        fig_path=joinpath(@__DIR__,"Ek_N$(N)_modes$(modes)_Cs$(Cs_str)_$(λ)_t$(t_str).png"),
     )
 
     return sim
 end
 
 sim = main();
-# ω_viz(sim; t_end=sim_time(sim)+200, isovalue=0.04) # uncomment visualize the flow!
+# f, ax = ω_viz(sim; t_end=sim_time(sim)+200, isovalue=0.04) # uncomment to visualize the flow!

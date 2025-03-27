@@ -63,15 +63,15 @@ function ω_viz(sim; t_end=nothing, dt=0.0025, video=false, isovalue=0.1)
 
     dat = sim.flow.σ[inside(sim.flow.σ)] |> Array; # CPU buffer array
     ω = ω!(dat, sim) |> Observable
-    f = Figure(size=(1200,1200))
+    f = Figure(size=(1200,1200), figure_padding=0)
     N = mean(size(sim.flow.σ))-2
     ax = Axis3(f[1, 1]; aspect=:equal, limits=(1,N,1,N,1,N))
     hidedecorations!(ax)
 
-    colormap = to_colormap(:plasma)
-    colormap[1] = RGBAf(0,0,0,0)
+    # colormap = to_colormap(:plasma)
+    # colormap[1] = RGBAf(0,0,0,0)
     # volume!(ax, ω,  algorithm = :absorption, absorption=1f0, colormap=colormap)
-    volume!(ax, ω, algorithm=:iso, colormap=:rainbow, isovalue=isovalue)
+    volume!(ax, ω, algorithm=:iso, colormap=:lightrainbow, isovalue=isovalue)
     display(f)
 
     if !isnothing(t_end) # time loop for animation
@@ -85,6 +85,8 @@ function ω_viz(sim; t_end=nothing, dt=0.0025, video=false, isovalue=0.1)
             end
         end
     end
+    # save("hit.png", ax.scene; px_per_unit = 4)
+    return f, ax
 end
 
 δ1(i,::Val{N}) where N = CartesianIndex(ntuple(j -> j==i ? 2 : 1, N))
