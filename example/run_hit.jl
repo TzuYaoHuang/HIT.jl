@@ -1,6 +1,7 @@
 using Revise
 using HIT, WaterLily, CUDA, Printf, LaTeXStrings, Plots, Random
-import WaterLily: dot, sgs!, size_u, @loop, @inside, inside, inside_u, CFL, quick, cds
+using WaterLily: dot, sgs!, size_u, @loop, @inside, inside, inside_u, quick, cds
+import WaterLily: CFL
 Random.seed!(99) # seed random turbulence generator
 
 
