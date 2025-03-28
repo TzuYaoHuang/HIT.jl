@@ -30,7 +30,7 @@ N = 2^5 # cells per direction
 modes = 2^11 # number of modes for initial isotropic turbulence condition, following Saad et al 2016, https://doi.org/10.2514/1.J055230
 ν = 1.5e-5 # same as Rozema et al 2015, https://doi.org/10.1063/1.4928700
 t0_ctu, t1_ctu, t2_ctu = 42.0, 98.0, 171.0 # in convective time units (CTU), t_ctu=length_scale/velocity_scale = M/U
-Cs = 0.18|>T # Smagorinsky constant. Use Cs=0.18 for N=2^6, and Cs=0.20 for N=2^5
+Cs = 0.20|>T # Smagorinsky constant. Use Cs=0.18 for N=2^6, and Cs=0.20 for N=2^5
 Δ = sqrt(1^2+1^2+1^2)|>T # Filter width
 λ = cds # convective scheme: cds or quick
 dt = 0.5 # constant time step (not in CTU!)
