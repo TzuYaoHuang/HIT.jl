@@ -1,5 +1,5 @@
 using Revise
-using HIT, WaterLily, CUDA, Printf, LaTeXStrings, Plots, Random
+using HIT, WaterLily, Printf, LaTeXStrings, Plots, Random
 using WaterLily: dot, sgs!, size_u, @loop, @inside, inside, inside_u, quick, cds
 import WaterLily: CFL
 Random.seed!(99) # seed random turbulence generator
@@ -28,11 +28,11 @@ M = 5.08/100 # grid size [m]
 L = 9*2π/100 # length of HIT cube [m], L = 11M
 velocity_scale = 10 # velocity related to the bulk flow (U₀ in paper) [m/s]
 
-N = 2^6 # cells per direction
+N = 2^5 # cells per direction
 modes = 2^11 # number of modes for initial isotropic turbulence condition, following Saad et al 2016, https://doi.org/10.2514/1.J055230
 ν = 1.5e-5 # same as Rozema et al 2015, https://doi.org/10.1063/1.4928700
 t0_ctu, t1_ctu, t2_ctu = 42.0, 98.0, 171.0 # in convective time units (CTU), t_ctu=length_scale/velocity_scale = M/U
-Cs = 0.18|>T # Smagorinsky constant. Use Cs=0.18 for N=2^6, and Cs=0.20 for N=2^5
+Cs = 0.20|>T # Smagorinsky constant. Use Cs=0.18 for N=2^6, and Cs=0.20 for N=2^5
 Δ = sqrt(1^2+1^2+1^2)|>T # Filter width
 λ = cds # convective scheme: cds or quick
 

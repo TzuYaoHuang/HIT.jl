@@ -1,5 +1,5 @@
 module HIT
-using DelimitedFiles, Interpolations, Distributions, Random, OutMacro, FFTW, CUDA
+using DelimitedFiles, Interpolations, Distributions, Random, OutMacro, FFTW
 import EllipsisNotation: Ellipsis; const dots = Ellipsis()
 import WaterLily: dot
 

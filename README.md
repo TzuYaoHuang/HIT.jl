@@ -19,3 +19,27 @@ An explicit turbulence model, the [Smagorinsky-Lilly model](), is used to accoun
 ## Installation and run
 First, you need to have a working Julia installation in your system, ideally with Julia version >=1.10. I recommend using [juliaup](https://github.com/JuliaLang/juliaup) to install and manage different Julia versions.
 
+Once Julia is installed, download this repository and use the Julia package manager to install the dependencies. The instructions below use `git` to download the repo, but you can just download the source files as well.
+
+```sh
+git clone https://github.com/b-fg/HIT.jl && cd HIT.jl
+julia --project -e 'using Pkg; Pkg.add(name="WaterLily", rev="turbulence_modelling"); Pkg.instantiate()'
+```
+The `instantiate` command will download and compile all the dependencies. Alternatively, you can use the package manager within the Julia REPL `julia --project` by pressing `]`, and then run the (e.g.) `instantiate` command. Note that we use the branch `turbulence_modelling` of WaterLily.
+
+Next, we do the same from the `example/` directory. Here, we will indicate that the `HIT.jl` package is installed locally as well.
+```sh
+cd example
+julia --project -e 'using Pkg; Pkg.develop(path=".."); Pkg.add(name="WaterLily", rev="turbulence_modelling"); Pkg.instantiate()'
+```
+
+Now the [`run_hit.jl`](example/run_hit.jl) script can be simply run within the `example` directory with
+```sh
+julia --project run_hit.jl
+```
+and this should produce the above plot of the energy cascade compared to the experimental data using `N=32` cells per direction.
+
+## Playing with the script
+
+Within
+
