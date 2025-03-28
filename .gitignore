@@ -3,3 +3,4 @@ Manifest.toml
 *.pdf
 *.png
 !assets/**
+*.mp4

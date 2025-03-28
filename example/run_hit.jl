@@ -1,11 +1,9 @@
 using Revise
-using HIT, WaterLily, Printf, LaTeXStrings, Plots, Random
+using HIT, WaterLily, Printf, LaTeXStrings, Plots, Random, CUDA
 using WaterLily: dot, sgs!, size_u, @loop, @inside, inside, inside_u, quick, cds
 import WaterLily: CFL
 Random.seed!(99) # seed random turbulence generator
 
-
-WaterLily.CFL(a::Flow;Δt_max=10)=0.5 # set a constant time step
 smagorinsky(I::CartesianIndex{m} where m; S, Cs, Δ) = @views (Cs*Δ)^2*sqrt(dot(S[I,:,:],S[I,:,:])) # define the Smagorinsky-Lilly model
 
 # Create the isotropic turbulence box by using `generate_hit` to generate the intial condition. Then we copy it to the velocity field (sim.flow.u)
@@ -32,9 +30,10 @@ N = 2^5 # cells per direction
 modes = 2^11 # number of modes for initial isotropic turbulence condition, following Saad et al 2016, https://doi.org/10.2514/1.J055230
 ν = 1.5e-5 # same as Rozema et al 2015, https://doi.org/10.1063/1.4928700
 t0_ctu, t1_ctu, t2_ctu = 42.0, 98.0, 171.0 # in convective time units (CTU), t_ctu=length_scale/velocity_scale = M/U
-Cs = 0.20|>T # Smagorinsky constant. Use Cs=0.18 for N=2^6, and Cs=0.20 for N=2^5
+Cs = 0.18|>T # Smagorinsky constant. Use Cs=0.18 for N=2^6, and Cs=0.20 for N=2^5
 Δ = sqrt(1^2+1^2+1^2)|>T # Filter width
 λ = cds # convective scheme: cds or quick
+dt = 0.5 # constant time step (not in CTU!)
 
 # Others
 length_scale = M / (L/N) # for CTU, paper uses M, which here we scale with L/N. The experiment domain is L=11M.
@@ -42,6 +41,7 @@ Cs_str = @sprintf("%2.2f", Cs)
 udf = Cs > 0 ? sgs! : nothing
 cbc_path = joinpath(@__DIR__, "cbc_spectrum.dat")
 set_plots_style!(; linewidth=2)
+WaterLily.CFL(a::Flow;Δt_max=10)=dt # set a constant time step
 
 function main()
     println("N=$(N), LES=$(udf), Cs=$(Cs_str), λ=$(λ)")
@@ -72,4 +72,5 @@ function main()
 end
 
 sim = main();
-# f, ax = ω_viz(sim; t_end=sim_time(sim)+200, isovalue=0.04) # uncomment to visualize the flow!
+# f, ax = ω_viz(sim; t_end=sim_time(sim)+200, isovalue=0.14) # uncomment to visualize the flow!
+# f, ax = ω_viz(sim; t_end=sim_time(sim)+100, dt_sim=dt*velocity_scale/length_scale, isovalue=0.14, video=true) # uncomment to record video!

@@ -55,9 +55,9 @@ function ω!(cpu_array, sim)
     copyto!(cpu_array, a[inside(a)]) # copy to CPU
 end
 
-function ω_viz(sim; t_end=nothing, dt=0.0025, video=false, isovalue=0.1)
-    function viz_step!(sim; dt)
-        sim_step!(sim, sim_time(sim)+dt; remeasure=false, verbose=true)
+function ω_viz(sim; t_end=nothing, dt_viz=0.001, dt_sim=0.5, video=false, isovalue=0.1)
+    function viz_step!(sim; dt_viz)
+        sim_step!(sim, sim_time(sim)+dt_viz; remeasure=false, verbose=true)
         ω[] = ω!(dat,sim)
     end
 
@@ -71,21 +71,21 @@ function ω_viz(sim; t_end=nothing, dt=0.0025, video=false, isovalue=0.1)
     # colormap = to_colormap(:plasma)
     # colormap[1] = RGBAf(0,0,0,0)
     # volume!(ax, ω,  algorithm = :absorption, absorption=1f0, colormap=colormap)
-    volume!(ax, ω, algorithm=:iso, colormap=:lightrainbow, isovalue=isovalue)
-    display(f)
+    volume!(ax, ω, algorithm=:iso, colormap=[:green], isovalue=isovalue)
 
     if !isnothing(t_end) # time loop for animation
         if video
-            GLMakie.record(f, "hit.mp4", 1:Int((t_end-sim_time(sim))/dt); framerate=60, compression=5) do frame
-                viz_step!(sim; dt)
+            GLMakie.record(f, "hit.mp4", 1:round(Int, (t_end-sim_time(sim))/dt_sim); framerate=30, compression=5) do frame
+                viz_step!(sim; dt_viz)
             end
         else
             while sim_time(sim) < t_end
-                viz_step!(sim; dt)
+                viz_step!(sim; dt_viz)
             end
         end
     end
     # save("hit.png", ax.scene; px_per_unit = 4)
+    display(f)
     return f, ax
 end
 
