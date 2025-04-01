@@ -19,18 +19,18 @@ function hit(L, N, M; length_scale=1, velocity_scale=1, cbc_path="cbc_spectrum.d
 end
 
 T = Float32 # run with single (Float32) or double (Float64) precision
-mem = Array # run on CPU (Array) or GPU (CuArray)
+mem = CuArray # run on CPU (Array) or GPU (CuArray)
 
 # Experiment: Comte-Bellot & Corrsin 1971, https://doi.org/10.1017/S0022112071001599
 M = 5.08/100 # grid size [m]
 L = 9*2π/100 # length of HIT cube [m], L = 11M
 velocity_scale = 10 # velocity related to the bulk flow (U₀ in paper) [m/s]
 
-N = 2^5 # cells per direction
+N = 2^6 # cells per direction
 modes = 2^11 # number of modes for initial isotropic turbulence condition, following Saad et al 2016, https://doi.org/10.2514/1.J055230
 ν = 1.5e-5 # same as Rozema et al 2015, https://doi.org/10.1063/1.4928700
 t0_ctu, t1_ctu, t2_ctu = 42.0, 98.0, 171.0 # in convective time units (CTU), t_ctu=length_scale/velocity_scale = M/U
-Cs = 0.20|>T # Smagorinsky constant. Use Cs=0.18 for N=2^6, and Cs=0.20 for N=2^5
+Cs = 0.18|>T # Smagorinsky constant. Use Cs=0.18 for N=2^6, and Cs=0.20 for N=2^5
 Δ = sqrt(1^2+1^2+1^2)|>T # Filter width
 λ = cds # convective scheme: cds or quick
 dt = 0.5 # constant time step (not in CTU!)
@@ -42,6 +42,7 @@ udf = Cs > 0 ? sgs! : nothing
 cbc_path = joinpath(@__DIR__, "cbc_spectrum.dat")
 set_plots_style!(; linewidth=2)
 WaterLily.CFL(a::Flow;Δt_max=10)=dt # set a constant time step
+save = true
 
 function main()
     println("N=$(N), LES=$(udf), Cs=$(Cs_str), λ=$(λ)")
@@ -51,6 +52,7 @@ function main()
     p = plot_spectra!(Plots.plot(dpi=600, title=L"$N=%$(N)$"), L, N, u_inside|>Array;
         cbc_path, cbc_t=1, label=L"t=%$t_str"
     )
+    save && HIT.write!(joinpath(@__DIR__,"data/", "flow_N$(N)_t$(t_str).jld2"), sim.flow)
 
     N1,n = size_u(sim.flow.u)
     S = zeros(T, N1..., n, n) |> mem # working array holding a tensor for each cell
@@ -60,6 +62,8 @@ function main()
     p = plot_spectra!(p, L, N, u_inside|>Array;
         cbc_path, cbc_t=2, label=L"t=%$t_str"
     )
+
+    save && HIT.write!(joinpath(@__DIR__,"data/", "flow_N$(N)_t$(t_str).jld2"), sim.flow)
 
     sim_step!(sim, sim_time(sim)+(t2_ctu-t1_ctu); verbose=true, remeasure=false, udf, νₜ=smagorinsky, S, Cs, Δ)
     t_str = @sprintf("%2.2f", sim_time(sim)+t0_ctu)
@@ -72,5 +76,6 @@ function main()
 end
 
 sim = main();
+return
 # f, ax = ω_viz(sim; t_end=sim_time(sim)+200, isovalue=0.14) # uncomment to visualize the flow!
 # f, ax = ω_viz(sim; t_end=sim_time(sim)+100, dt_sim=dt*velocity_scale/length_scale, isovalue=0.14, video=true) # uncomment to record video!

@@ -2,6 +2,7 @@ using Plots, LaTeXStrings, CategoricalArrays, Printf, ColorSchemes
 using GLMakie; GLMakie.activate!(inline=false)
 using WaterLily
 using Distributions: mean
+using JLD2
 
 set_plots_style!(; fontsize=14, linewidth=1) = Plots.default(
     fontfamily = "Computer Modern",
@@ -18,6 +19,32 @@ set_plots_style!(; fontsize=14, linewidth=1) = Plots.default(
     tickfontsize = fontsize,
     labelfontsize = fontsize,
 )
+
+
+load!(flow::Flow, fname::String; dir="./") = load!(flow.p, flow.u, fname; dir)
+function load!(p, u, fname; dir="./")
+    obj = jldopen(joinpath(dir,fname))
+    f = typeof(p).name.wrapper
+    p .= obj["p"] |> f
+    u .= obj["u"] |> f
+    obj["t"]
+end
+write!(fname, p, u, t; dir="./") = jldsave(
+    joinpath(dir, fname);
+    p=Array(p),
+    u=Array(u),
+    t=t
+)
+write!(fname, flow::Flow; dir="./") = write!(
+    fname,
+    flow.p,
+    flow.u,
+    WaterLily.time(flow);
+    dir
+)
+
+δ1(i,::Val{N}) where N = CartesianIndex(ntuple(j -> j==i ? 2 : 1, N))
+δ1(i,I::CartesianIndex{N}) where N = δ1(i, Val{N}())
 
 function cbc_spectrum(cbc_path="data/cbc_spectrum.dat", cbc_t=1)
     cbc_spectrum = readdlm(cbc_path)
@@ -89,5 +116,30 @@ function ω_viz(sim; t_end=nothing, dt_viz=0.001, dt_sim=0.5, video=false, isova
     return f, ax
 end
 
-δ1(i,::Val{N}) where N = CartesianIndex(ntuple(j -> j==i ? 2 : 1, N))
-δ1(i,I::CartesianIndex{N}) where N = δ1(i, Val{N}())
+function ω_contour!(σ, u; levels=20, colormap=:viridis)
+    WaterLily.@inside σ[I] = WaterLily.ω_mag(I, u)
+    dots = WaterLily.inside(σ).indices |> x -> CartesianIndices(x[1:2])
+    indz = last(size(σ))÷2
+    f = Figure(size=(1200,1200), figure_padding=5); ax = Axis(f[1, 1])
+    GLMakie.contourf!(ax, @views σ[dots,indz]'; levels, colormap)
+    display(f)
+    return f, ax
+end
+function σ_contour(σ; levels=20, colormap=:viridis)
+    f = Figure(size=(1011,1011), figure_padding=5); ax = Axis(f[1, 1], aspect = AxisAspect(1))
+    GLMakie.contourf!(ax, @views σ; levels, colormap)
+    display(f)
+    return f, ax
+end
+
+"""
+Returns the (flattened) Kronecker product between multiple vectors.
+Note that `kron(vectors...)` is different, since the Kronecker product orders dimensions inversely than how Julia orders tensors.
+https://discourse.julialang.org/t/reshaping-a-matrix-for-reverse-kronecker-product-or-schmidt-decomposition/14702
+"""
+⨂(vectors...) = [prod.(collect(Base.product(vectors...)))...]
+"""
+Returns the tensor product of multiple vectors in Matrix form. Multiplications are not aactually performed,
+    but the elements of the product are stored in each matrix row.
+"""
+⨂m(vectors...) = hcat(collect.(vcat(collect(Base.product(vectors...))...))...)'
