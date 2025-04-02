@@ -46,7 +46,7 @@ udf = Cs > 0 ? sgs! : nothing
 cbc_path = joinpath(@__DIR__, "data/", "cbc_spectrum.dat")
 set_plots_style!(; linewidth=2)
 WaterLily.CFL(a::Flow;Δt_max=10) = dt # set a constant time step
-save, load = false, false
+save, load = false, true
 
 function main()
     println("N=$(N), LES=$(udf), Cs=$(Cs_str), λ=$(λ)")

@@ -4,3 +4,4 @@ Manifest.toml
 *.png
 !assets/**
 *.mp4
+example/data/*N256*
