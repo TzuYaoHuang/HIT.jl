@@ -129,7 +129,7 @@ end
 function σ_contour(σ; levels=20, colormap=:viridis)
     f = Figure(size=(1011,1011), figure_padding=5); ax = Axis(f[1, 1], aspect = AxisAspect(1))
     GLMakie.contourf!(ax, @views σ; levels, colormap)
-    display(f)
+    display(GLMakie.Screen(), f)
     return f, ax
 end
 

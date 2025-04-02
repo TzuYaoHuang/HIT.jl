@@ -104,7 +104,7 @@ function filter_sharp(u, wn_c)
 
     wn_m = ⨂m(wn...) # wn matrix
     rk = map(x->sqrt(sum(x.^2)), eachrow(wn_m)) # resulting wavenumber
-    sharp_filter = map(x -> x > wn_c ? 0.0 : 1.0, rk) # filter mask
+    sharp_filter = map(x -> x > wn_c/2 ? 0.0 : 1.0, rk) # filter mask
     for d in 1:D
         uk[d][:] .*= sharp_filter
     end
