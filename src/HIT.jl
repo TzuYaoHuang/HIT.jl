@@ -5,7 +5,8 @@ import WaterLily: dot
 
 include("util.jl")
 
-export generate_hit, spectrum, cbc_spectrum, plot_spectra!, ω_viz, set_plots_style!, δ1
+export generate_hit, spectrum, cbc_spectrum, plot_spectra!, ω_viz, σ_contour, filter_sharp
+export write!, load!, set_plots_style!, δ1, ⨂, ⨂m
 
 """
     generate_hit(L,N,M; mem=Array)
@@ -53,7 +54,7 @@ function generate_hit(L,N,M; cbc_path="data/cbc_spectrum.dat", mem=Array)
     @. szm = szm / smag
 
     # Verify that the wave vector and sigma are perpendicular
-    # @assert isapprox(sum(dot(ktx, sxm) + dot(kty, sym) + dot(ktz, szm)), 0; atol=100eps(T)) "wave vector and sigma are not perpendicular"
+    @assert isapprox(sum(dot(ktx, sxm) + dot(kty, sym) + dot(ktz, szm)), 0; atol=eps(Float32)) "wave vector and sigma are not perpendicular"
 
     # Get CBC spectrum
     k_cbc, E = cbc_spectrum(cbc_path)
@@ -94,6 +95,20 @@ function spectrum(u, L::Tuple)
     end
     k = collect(k0_norm * i for i in 0:N_norm-1)
     return k, tke_sum./k0_norm
+end
+
+function filter_sharp(u, wn_c)
+    N,D = size(u)[1:end-1], last(size(u))
+    wn = collect(fftfreq(N[d]) * N[d] for d in 1:D) # or wave numbers, 0..(N-2)/2,-N/2,...,-1, vcat(0:(N[i]-2)/2,-N[i]/2:-1)
+    uk = collect(fft(u[dots,d]) for d in 1:D)
+
+    wn_m = ⨂m(wn...) # wn matrix
+    rk = map(x->sqrt(sum(x.^2)), eachrow(wn_m)) # resulting wavenumber
+    sharp_filter = map(x -> x > wn_c/2 ? 0.0 : 1.0, rk) # filter mask
+    for d in 1:D
+        uk[d][:] .*= sharp_filter
+    end
+    return stack(ifft(uk[d])|>real for d in 1:D)
 end
 
 end # module HIT
