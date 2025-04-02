@@ -6,7 +6,7 @@ import WaterLily: dot
 include("util.jl")
 
 export generate_hit, spectrum, cbc_spectrum, plot_spectra!, ω_viz, σ_contour, filter_sharp
-export write!, load!, set_plots_style!, δ1, ⨂, ⨂m # utils
+export write!, load!, set_plots_style!, δ1, ⨂, ⨂m
 
 """
     generate_hit(L,N,M; mem=Array)
@@ -54,7 +54,7 @@ function generate_hit(L,N,M; cbc_path="data/cbc_spectrum.dat", mem=Array)
     @. szm = szm / smag
 
     # Verify that the wave vector and sigma are perpendicular
-    # @assert isapprox(sum(dot(ktx, sxm) + dot(kty, sym) + dot(ktz, szm)), 0; atol=100eps(T)) "wave vector and sigma are not perpendicular"
+    @assert isapprox(sum(dot(ktx, sxm) + dot(kty, sym) + dot(ktz, szm)), 0; atol=eps(Float32)) "wave vector and sigma are not perpendicular"
 
     # Get CBC spectrum
     k_cbc, E = cbc_spectrum(cbc_path)

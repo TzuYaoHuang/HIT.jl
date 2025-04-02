@@ -106,6 +106,7 @@ function ω_viz(sim; t_end=nothing, dt_viz=0.001, dt_sim=0.5, video=false, isova
                 viz_step!(sim; dt_viz)
             end
         else
+            display(f)
             while sim_time(sim) < t_end
                 viz_step!(sim; dt_viz)
             end
