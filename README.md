@@ -1,18 +1,25 @@
 # HIT.jl: Homogeneous Isotropic Turbulence with WaterLily.jl
 Simulating decaying homogeneous isotropic turbulence (HIT), made easy!
 
-<p align="center">
+<!-- <p align="center">
 <img src="assets/hit.png" width="400">
+</p> -->
+<p align="center">
+    <video width="360" height="360" controls=0 preload="true" autoplay="autoplay">
+        <source src="https://surfdrive.surf.nl/files/index.php/s/bNtEg64b8JrWWdV/download" type="video/mp4">
+    </video>
 </p>
 
 
 This repo uses [WaterLily.jl](https://github.com/WaterLily-jl/WaterLily.jl) as a CFD solver to simulate HIT. We use experimental data from the paper of [Comte-Bellot and Corrsin](https://doi.org/10.1017/S0022112071001599) to validate the results, and the HIT generator method from [Saad et al.](https://doi.org/10.2514/1.J055230) to create a random incompressible turbulent flow field as initial condition.
 
-An explicit turbulence model, the [Smagorinsky-Lilly model](https://en.wikipedia.org/wiki/Large_eddy_simulation#Smagorinsky%E2%80%93Lilly_model), is used to account for the subgrid scales. In WaterLily, we select a central difference scheme for the convective term to mitigate numerical dissipation. The numerical domain is defined as a triple-periodic box with $N$ cells per direction, resulting in $N^3$ total cells. Experimental results can be nicely matched with resolutions of $N=32$ and $N=64$, and a turbulence model constant of $C_s=0.17$ and $C_s=0.16$, respectively.
+An explicit turbulence model, the [Smagorinsky-Lilly model](https://en.wikipedia.org/wiki/Large_eddy_simulation#Smagorinsky%E2%80%93Lilly_model), is used to account for the sub-grid scales. In WaterLily, we select a central difference scheme for the convective term to mitigate numerical dissipation. The numerical domain is defined as a triple-periodic box with $N$ cells per direction, resulting in $N^3$ total cells. Experimental results can be nicely matched with resolutions of $N=\{32,64,128,256\}$, and a turbulence model constant of $C_s=0.17$.
 
 <p align="center">
 <img src="assets/Ek_N32_modes2048_Cs0.17_cds_t171.58.png" width="400">
-<img src="assets/Ek_N64_modes2048_Cs0.16_cds_t171.14.png" width="400">
+<img src="assets/Ek_N64_modes2048_Cs0.17_cds_t171.14.png" width="400">
+<img src="assets/Ek_N128_modes2048_Cs0.17_cds_t171.36.png" width="400">
+<img src="assets/Ek_N256_modes2048_Cs0.17_cds_t171.59.png" width="400">
 </p>
 
 
