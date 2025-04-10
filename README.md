@@ -1,14 +1,14 @@
 # HIT.jl: Homogeneous Isotropic Turbulence with WaterLily.jl
 Simulating decaying homogeneous isotropic turbulence (HIT), made easy!
 
-<!-- <p align="center">
-<img src="assets/hit.png" width="400">
-</p> -->
 <p align="center">
+<img src="assets/hit.png" width="400">
+</p>
+<!-- <p align="center">
     <video width="360" height="360" controls=0 preload="true" autoplay="autoplay">
         <source src="https://surfdrive.surf.nl/files/index.php/s/bNtEg64b8JrWWdV/download" type="video/mp4">
     </video>
-</p>
+</p> -->
 
 
 This repo uses [WaterLily.jl](https://github.com/WaterLily-jl/WaterLily.jl) as a CFD solver to simulate HIT. We use experimental data from the paper of [Comte-Bellot and Corrsin](https://doi.org/10.1017/S0022112071001599) to validate the results, and the HIT generator method from [Saad et al.](https://doi.org/10.2514/1.J055230) to create a random incompressible turbulent flow field as initial condition.
