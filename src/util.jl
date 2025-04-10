@@ -70,7 +70,7 @@ function plot_spectra!(p, L, N, u;
     Plots.vline!(p, [2π/(L/(N/2))], label=:none, ls=:dash, color=:grey)
 
     Plots.plot!(p, xaxis=:log10, yaxis=:log10, xlims=(10,2e3), ylims=(1e-8,1e-3),
-    xlabel=L"\kappa", ylabel=L"E(\kappa)",framestyle=:box, grid=true, minorgrid=true, size=(900,600)
+        xlabel=L"\kappa", ylabel=L"E(\kappa)",framestyle=:box, grid=true, minorgrid=true, size=(900,600)
     )
     !isnothing(fig_path) && (savefig(p, fig_path); println("Figure stored in $(fig_path)"))
     return p
