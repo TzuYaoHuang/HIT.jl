@@ -7,7 +7,7 @@ Random.seed!(99) # seed random turbulence generator
 smagorinsky(I::CartesianIndex{m} where m; S, Cs, Δ) = @views (Cs*Δ)^2*sqrt(2dot(S[I,:,:],S[I,:,:])) # define the Smagorinsky-Lilly model
 
 # Create the isotropic turbulence box by using `generate_hit` to generate the intial condition. Then we copy it to the velocity field (sim.flow.u)
-function hit(L, N, M; load=false, length_scale=1, velocity_scale=1, cbc_path="cbc_spectrum.dat", ν=1e-6, mem=Array, T=Float32)
+function hit(L, N, M; load=false, length_scale=1, velocity_scale=1, cbc_path="cbc_spectrum.dat", ν=1.48e-5, mem=Array, T=Float32)
     sim = Simulation((N,N,N), (0,0,0), length_scale; U=velocity_scale, ν, T, mem, perdir=(1,2,3))
     if load
         load!(sim.flow; fname=joinpath(@__DIR__, "data/", "flow_N$(N)_t42.00.jld2"))
@@ -32,15 +32,18 @@ velocity_scale = 10 # velocity related to the bulk flow (U₀ in paper) [m/s]
 
 N = 2^5 # cells per direction
 modes = 2^11 # number of modes for initial isotropic turbulence condition, following Saad et al 2016, https://doi.org/10.2514/1.J055230
-ν = 1.5e-5 # same as Rozema et al 2015, https://doi.org/10.1063/1.4928700
+ν_air = 1.48e-5 # same as Rozema et al 2015, https://doi.org/10.1063/1.4928700 (dry air at 15C)
+Re = M*velocity_scale/ν_air # 33866
+length_scale = (M/L)*N # for CTU, paper uses M, which here we scale with L/N. The experiment domain is L=11M.
+ν_numerical = length_scale/Re # for numerical Re, we use U=1
+
 t0_ctu, t1_ctu, t2_ctu = 42.0, 98.0, 171.0 # in convective time units (CTU), t_ctu=length_scale/velocity_scale = M/U
-Cs = T(0.17) # Smagorinsky constant. Use Cs=0.17 for N=2^5, and Cs=0.16 for N=2^6
+Cs = T(0.17) # Smagorinsky constant
 Δ = sqrt(1^2+1^2+1^2)|>T # Filter width
 λ = cds # convective scheme: cds or quick
 dt = 0.5 # constant time step (not in CTU!)
 
 # Others
-length_scale = M / (L/N) # for CTU, paper uses M, which here we scale with L/N. The experiment domain is L=11M.
 Cs_str = @sprintf("%2.2f", Cs)
 udf = Cs > 0 ? sgs! : nothing
 cbc_path = joinpath(@__DIR__, "data/", "cbc_spectrum.dat")
@@ -50,7 +53,7 @@ save, load = false, true
 
 function main()
     println("N=$(N), LES=$(udf), Cs=$(Cs_str), λ=$(λ)")
-    sim = hit(L, N, modes; load, length_scale, velocity_scale, cbc_path, ν, mem, T)
+    sim = hit(L, N, modes; load, length_scale, velocity_scale, cbc_path, ν=ν_numerical, mem, T)
     u_inside = @views sim.flow.u[inside_u(sim.flow.u),:]
     t_str = @sprintf("%2.2f", t0_ctu)
     save && save!(joinpath(@__DIR__,"data/", "flow_N$(N)_t$(t_str).jld2"), sim.flow)
