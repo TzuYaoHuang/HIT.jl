@@ -20,29 +20,6 @@ set_plots_style!(; fontsize=14, linewidth=1) = Plots.default(
     labelfontsize = fontsize,
 )
 
-
-# load!(flow::Flow, fname::String; dir="./") = load!(flow.p, flow.u, fname; dir)
-# function load!(p, u, fname; dir="./")
-#     obj = jldopen(joinpath(dir,fname))
-#     f = typeof(p).name.wrapper
-#     p .= obj["p"] |> f
-#     u .= obj["u"] |> f
-#     obj["t"]
-# end
-# write!(fname, p, u, t; dir="./") = jldsave(
-#     joinpath(dir, fname);
-#     p=Array(p),
-#     u=Array(u),
-#     t=t
-# )
-# write!(fname, flow::Flow; dir="./") = write!(
-#     fname,
-#     flow.p,
-#     flow.u,
-#     WaterLily.time(flow);
-#     dir
-# )
-
 δ1(i,::Val{N}) where N = CartesianIndex(ntuple(j -> j==i ? 2 : 1, N))
 δ1(i,I::CartesianIndex{N}) where N = δ1(i, Val{N}())
 
@@ -81,7 +58,6 @@ function ω!(cpu_array, sim)
     WaterLily.@inside a[I] = WaterLily.ω_mag(I,sim.flow.u)
     copyto!(cpu_array, a[inside(a)]) # copy to CPU
 end
-
 
 """
 Returns the (flattened) Kronecker product between multiple vectors.
