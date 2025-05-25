@@ -23,14 +23,14 @@ Once Julia is installed, download this repository and use the Julia package mana
 
 ```sh
 git clone https://github.com/b-fg/HIT.jl && cd HIT.jl
-julia --project -e 'using Pkg; Pkg.add(name="WaterLily", rev="turbulence_modelling"); Pkg.instantiate()'
+julia --project -e 'using Pkg; Pkg.add(name="WaterLily"); Pkg.instantiate()'
 ```
-The `instantiate` command will download and compile all the dependencies. Alternatively, you can use the package manager within the Julia REPL `julia --project` by pressing `]`, and then run the (e.g.) `instantiate` command. Note that we use the branch `turbulence_modelling` of WaterLily.
+The `instantiate` command will download and compile all the dependencies. Alternatively, you can use the package manager within the Julia REPL `julia --project` by pressing `]`, and then run the (e.g.) `instantiate` command.
 
 Next, we do the same from the `example/` directory. Here, we will indicate that the `HIT.jl` package is installed locally as well.
 ```sh
 cd example
-julia --project -e 'using Pkg; Pkg.develop(path=".."); Pkg.add(name="WaterLily", rev="turbulence_modelling"); Pkg.instantiate()'
+julia --project -e 'using Pkg; Pkg.develop(path=".."); Pkg.add(name="WaterLily"); Pkg.instantiate()'
 ```
 
 Now the [`run_hit.jl`](example/run_hit.jl) script can be simply run within the `example` directory with
@@ -45,8 +45,8 @@ and this should produce the above plot of the energy cascade compared to the exp
 - Choose the number of spectral modes considered in the intitial velocity vector field by modifying `modes`.
 - Choose to run without/with the Smagorinsky-Lilly model by setting its constant `Cs = 0` (no explicit turbulence model), or a positive value of `Cs` for the model to be activated (and use that constant value).
 - Choose the discretization scheme of the convective term to use a [central difference scheme](https://en.wikipedia.org/wiki/Central_differencing_scheme) `λ = cds` or the [QUICK](https://en.wikipedia.org/wiki/QUICK_scheme) scheme `λ = quick`.
-- Visualize the flow using the `ω_viz` routine, which generates a 3D plot of constant vorticity magnitude structures. For example
+- Visualize the flow using the `viz!` routine, which generates a 3D plot of constant vorticity magnitude structures. For example
 ```julia
-f, ax = ω_viz(sim; t_end=sim_time(sim)+200, isovalue=0.04)
+viz!(sim; t_end=sim_time(sim)+200, isovalue=0.04)
 ```
 generates the 3D plot and runs the simulation for 200 convective time units. You can change the isosurface value of the vorticity magnitude with the `isovalue` parameter.

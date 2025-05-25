@@ -1,5 +1,5 @@
 using Revise
-using HIT, WaterLily, Printf, LaTeXStrings, Plots, Random, CUDA
+using HIT, WaterLily, Printf, LaTeXStrings, Plots, Random, CUDA, GLMakie
 using WaterLily: dot, sgs!, size_u, @loop, @inside, inside, inside_u, quick, cds
 import WaterLily: CFL
 Random.seed!(99) # seed random turbulence generator
@@ -7,10 +7,10 @@ Random.seed!(99) # seed random turbulence generator
 smagorinsky(I::CartesianIndex{m} where m; S, Cs, Δ) = @views (Cs*Δ)^2*sqrt(2dot(S[I,:,:],S[I,:,:])) # define the Smagorinsky-Lilly model
 
 # Create the isotropic turbulence box by using `generate_hit` to generate the intial condition. Then we copy it to the velocity field (sim.flow.u)
-function hit(L, N, M; load=false, length_scale=1, velocity_scale=1, cbc_path="cbc_spectrum.dat", ν=1e-6, λ=quick, mem=Array, T=Float32)
-    sim = Simulation((N,N,N), (0,0,0), length_scale; U=velocity_scale, ν, λ, T, mem, perdir=(1,2,3))
+function hit(L, N, M; load=false, length_scale=1, velocity_scale=1, cbc_path="cbc_spectrum.dat", ν=1e-6, mem=Array, T=Float32)
+    sim = Simulation((N,N,N), (0,0,0), length_scale; U=velocity_scale, ν, T, mem, perdir=(1,2,3))
     if load
-        load!(sim.flow, joinpath(@__DIR__, "data/", "flow_N$(N)_t42.00.jld2"))
+        load!(sim.flow; fname=joinpath(@__DIR__, "data/", "flow_N$(N)_t42.00.jld2"))
     else
         u0 = generate_hit(L,N,M; cbc_path, mem) |> stack
         Ni,D = size_u(sim.flow.u)
@@ -50,10 +50,10 @@ save, load = false, true
 
 function main()
     println("N=$(N), LES=$(udf), Cs=$(Cs_str), λ=$(λ)")
-    sim = hit(L, N, modes; load, length_scale, velocity_scale, cbc_path, ν, λ, mem, T)
+    sim = hit(L, N, modes; load, length_scale, velocity_scale, cbc_path, ν, mem, T)
     u_inside = @views sim.flow.u[inside_u(sim.flow.u),:]
     t_str = @sprintf("%2.2f", t0_ctu)
-    save && HIT.write!(joinpath(@__DIR__,"data/", "flow_N$(N)_t$(t_str).jld2"), sim.flow)
+    save && save!(joinpath(@__DIR__,"data/", "flow_N$(N)_t$(t_str).jld2"), sim.flow)
     p = plot_spectra!(Plots.plot(dpi=600, title=L"$N=%$(N)$"), L, N, u_inside|>Array;
         cbc_path, cbc_t=1, label=L"t=%$t_str"
     )
@@ -61,16 +61,16 @@ function main()
     N_t,n = size_u(sim.flow.u)
     S = zeros(T, N_t..., n, n) |> mem # working array holding a tensor for each cell
 
-    sim_step!(sim, t1_ctu-t0_ctu; verbose=true, remeasure=false, udf, νₜ=smagorinsky, S, Cs, Δ)
+    sim_step!(sim, t1_ctu-t0_ctu; verbose=true, remeasure=false, λ, udf, νₜ=smagorinsky, S, Cs, Δ)
     t_str = @sprintf("%2.2f", sim_time(sim)+t0_ctu)
-    save && HIT.write!(joinpath(@__DIR__,"data/", "flow_N$(N)_t$(t_str).jld2"), sim.flow)
+    save && save!(joinpath(@__DIR__,"data/", "flow_N$(N)_t$(t_str).jld2"), sim.flow)
     p = plot_spectra!(p, L, N, u_inside|>Array;
         cbc_path, cbc_t=2, label=L"t=%$t_str"
     )
 
-    sim_step!(sim, sim_time(sim)+(t2_ctu-t1_ctu); verbose=true, remeasure=false, udf, νₜ=smagorinsky, S, Cs, Δ)
-    save && HIT.write!(joinpath(@__DIR__,"data/", "flow_N$(N)_t$(t_str).jld2"), sim.flow)
+    sim_step!(sim, sim_time(sim)+(t2_ctu-t1_ctu); verbose=true, remeasure=false, λ, udf, νₜ=smagorinsky, S, Cs, Δ)
     t_str = @sprintf("%2.2f", sim_time(sim)+t0_ctu)
+    save && save!(joinpath(@__DIR__,"data/", "flow_N$(N)_t$(t_str).jld2"), sim.flow)
     p = plot_spectra!(p, L, N, u_inside|>Array;
         cbc_path, cbc_t=3, label=L"t=%$t_str",
         fig_path=joinpath(@__DIR__,"plots/", "Ek_N$(N)_modes$(modes)_Cs$(Cs_str)_$(λ)_t$(t_str).png"),
@@ -80,7 +80,5 @@ function main()
 end
 
 sim = main(); return
-
-# f, ax = ω_viz(sim; t_end=sim_time(sim)+200, isovalue=0.14) # uncomment to visualize the flow!
-# f, ax = ω_viz(sim; t_end=sim_time(sim)+200, dt_sim=dt*velocity_scale/length_scale, isovalue=0.14, video=true) # uncomment to record video!
-# f, ax = σ_contour(sim.flow.u[:,:,N÷2,1]|>Array) # uncomment to plot countour of the velocity field
+# viz!(sim, ω!; t_end=sim_time(sim)+400, isovalue=0.14, algorithm=:iso, colormap=[:green],); return
+# viz!(sim, ω!; t_end=sim_time(sim)+400, d=2); return

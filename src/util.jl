@@ -21,27 +21,27 @@ set_plots_style!(; fontsize=14, linewidth=1) = Plots.default(
 )
 
 
-load!(flow::Flow, fname::String; dir="./") = load!(flow.p, flow.u, fname; dir)
-function load!(p, u, fname; dir="./")
-    obj = jldopen(joinpath(dir,fname))
-    f = typeof(p).name.wrapper
-    p .= obj["p"] |> f
-    u .= obj["u"] |> f
-    obj["t"]
-end
-write!(fname, p, u, t; dir="./") = jldsave(
-    joinpath(dir, fname);
-    p=Array(p),
-    u=Array(u),
-    t=t
-)
-write!(fname, flow::Flow; dir="./") = write!(
-    fname,
-    flow.p,
-    flow.u,
-    WaterLily.time(flow);
-    dir
-)
+# load!(flow::Flow, fname::String; dir="./") = load!(flow.p, flow.u, fname; dir)
+# function load!(p, u, fname; dir="./")
+#     obj = jldopen(joinpath(dir,fname))
+#     f = typeof(p).name.wrapper
+#     p .= obj["p"] |> f
+#     u .= obj["u"] |> f
+#     obj["t"]
+# end
+# write!(fname, p, u, t; dir="./") = jldsave(
+#     joinpath(dir, fname);
+#     p=Array(p),
+#     u=Array(u),
+#     t=t
+# )
+# write!(fname, flow::Flow; dir="./") = write!(
+#     fname,
+#     flow.p,
+#     flow.u,
+#     WaterLily.time(flow);
+#     dir
+# )
 
 δ1(i,::Val{N}) where N = CartesianIndex(ntuple(j -> j==i ? 2 : 1, N))
 δ1(i,I::CartesianIndex{N}) where N = δ1(i, Val{N}())
@@ -82,56 +82,6 @@ function ω!(cpu_array, sim)
     copyto!(cpu_array, a[inside(a)]) # copy to CPU
 end
 
-function ω_viz(sim; t_end=nothing, dt_viz=0.001, dt_sim=0.5, video=false, isovalue=0.1)
-    function viz_step!(sim; dt_viz)
-        sim_step!(sim, sim_time(sim)+dt_viz; remeasure=false, verbose=true)
-        ω[] = ω!(dat,sim)
-    end
-
-    dat = sim.flow.σ[inside(sim.flow.σ)] |> Array; # CPU buffer array
-    ω = ω!(dat, sim) |> Observable
-    f = Figure(size=(1200,1200), figure_padding=0)
-    N = mean(size(sim.flow.σ))-2
-    ax = Axis3(f[1, 1]; aspect=:equal, limits=(1,N,1,N,1,N))
-    hidedecorations!(ax)
-
-    # colormap = to_colormap(:plasma)
-    # colormap[1] = RGBAf(0,0,0,0)
-    # volume!(ax, ω,  algorithm = :absorption, absorption=1f0, colormap=colormap)
-    volume!(ax, ω, algorithm=:iso, colormap=[:green], isovalue=isovalue)
-
-    if !isnothing(t_end) # time loop for animation
-        if video
-            GLMakie.record(f, "hit.mp4", 1:round(Int, (t_end-sim_time(sim))/dt_sim); framerate=30, compression=5) do frame
-                viz_step!(sim; dt_viz)
-            end
-        else
-            display(f)
-            while sim_time(sim) < t_end
-                viz_step!(sim; dt_viz)
-            end
-        end
-    end
-    # save("hit.png", ax.scene; px_per_unit = 4)
-    display(f)
-    return f, ax
-end
-
-function ω_contour!(σ, u; levels=20, colormap=:viridis)
-    WaterLily.@inside σ[I] = WaterLily.ω_mag(I, u)
-    dots = WaterLily.inside(σ).indices |> x -> CartesianIndices(x[1:2])
-    indz = last(size(σ))÷2
-    f = Figure(size=(1200,1200), figure_padding=5); ax = Axis(f[1, 1])
-    GLMakie.contourf!(ax, @views σ[dots,indz]'; levels, colormap)
-    display(f)
-    return f, ax
-end
-function σ_contour(σ; levels=20, colormap=:viridis)
-    f = Figure(size=(1011,1011), figure_padding=5); ax = Axis(f[1, 1], aspect = AxisAspect(1))
-    GLMakie.contourf!(ax, @views σ; levels, colormap)
-    display(GLMakie.Screen(), f)
-    return f, ax
-end
 
 """
 Returns the (flattened) Kronecker product between multiple vectors.
