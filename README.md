@@ -54,6 +54,6 @@ and this should produce the above plot of the energy cascade compared to the exp
 - Choose the discretization scheme of the convective term to use a [central difference scheme](https://en.wikipedia.org/wiki/Central_differencing_scheme) `λ = cds` or the [QUICK](https://en.wikipedia.org/wiki/QUICK_scheme) scheme `λ = quick`.
 - Visualize the flow using the `viz!` routine, which generates a 3D plot of constant vorticity magnitude structures. For example
 ```julia
-viz!(sim; t_end=sim_time(sim)+200, isovalue=0.04)
+viz!(sim, ω!; t_end=sim_time(sim)+400, isovalue=0.1, algorithm=:iso, colormap=[:green],)
 ```
 generates the 3D plot and runs the simulation for 200 convective time units. You can change the isosurface value of the vorticity magnitude with the `isovalue` parameter.
