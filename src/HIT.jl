@@ -6,7 +6,7 @@ import WaterLily: dot
 include("util.jl")
 
 export generate_hit, spectrum, cbc_spectrum, plot_spectra!, ω_viz, σ_contour, filter_sharp
-export write!, load!, set_plots_style!, δ1, ⨂, ⨂m
+export write!, load!, set_plots_style!, δ1, ⨂, ⨂m, ω!
 
 """
     generate_hit(L,N,M; mem=Array)
