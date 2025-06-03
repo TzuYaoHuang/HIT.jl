@@ -1,5 +1,5 @@
 using Revise
-using HIT, WaterLily, Printf, LaTeXStrings, Plots, Random, CUDA, GLMakie
+using HIT, WaterLily, Printf, LaTeXStrings, Plots, Random, CUDA
 using WaterLily: dot, sgs!, size_u, @loop, @inside, inside, inside_u, quick, cds
 import WaterLily: CFL
 Random.seed!(99) # seed random turbulence generator
@@ -83,5 +83,13 @@ function main()
 end
 
 sim = main(); return
-# viz!(sim, ω!; t_end=sim_time(sim)+400, isovalue=0.14, algorithm=:iso, colormap=[:green],); return
-# viz!(sim, ω!; t_end=sim_time(sim)+400, d=2); return
+
+## Visualization
+# N_t,n = size_u(sim.flow.u)
+# S = zeros(T, N_t..., n, n) |> mem
+## 3D
+# viz!(sim, ω!; t_end=sim_time(sim)+400, λ, udf, udf_kwargs=Dict(:νₜ=>smagorinsky, :S=>S, :Cs=>Cs, :Δ=>Δ),
+#     isovalue=0.14, algorithm=:iso, colormap=[:green],); return
+## 2D
+# viz!(sim, ω!; t_end=sim_time(sim)+400, d=2,
+#     λ, udf, udf_kwargs=Dict(:νₜ=>smagorinsky, :S=>S, :Cs=>Cs, :Δ=>Δ)); return
